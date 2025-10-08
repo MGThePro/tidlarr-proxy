@@ -1,0 +1,18 @@
+services:
+  tidlarr-proxy:
+    image: tidlarr-proxy
+    container_name: tidlarr-proxy
+    environment:
+      - TZ=Europe/Berlin
+      - DOWNLOAD_PATH=/data/tidlarr
+      - CATEGORY=music
+      - PORT=8688
+      # The API Key is the password to your instance, set when configuring indexer and downloader in Lidarr
+      # Set any value you wish here, but do not leave it empty
+      - API_KEY=abc
+    user: "1000:1000"
+    volumes:
+      - ./tidlarr:/data/tidlarr
+    ports:
+      - "8688:8688"
+    restart: unless-stopped
