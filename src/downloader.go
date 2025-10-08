@@ -22,6 +22,7 @@ type File struct {
 	isrc         string
 	DownloadLink string
 	completed    bool
+	Lyrics       string
 }
 
 type Download struct {
@@ -160,13 +161,16 @@ func generateDownload(filename string, Id string, numTracks int) {
 		var valueString = value.String()
 		track.Id = int(gjson.Get(valueString, "item.id").Int())
 		track.Name = gjson.Get(valueString, "item.title").String()
-		fmt.Println("Went through track " + track.Name)
 		track.Index = gjson.Get(valueString, "item.trackNumber").String()
 		track.mediaNumber = gjson.Get(valueString, "item.volumeNumber").String()
 		track.isrc = gjson.Get(valueString, "item.isrc").String()
-		track.completed = false
-		var queryUrl string = ApiLink + "/track/?id=" + strconv.Itoa(track.Id) + "&quality=LOSSLESS"
+		var queryUrl string = ApiLink + "/lyrics/?id=" + strconv.Itoa(track.Id)
 		bodyBytes, err := request(queryUrl)
+		track.Lyrics = gjson.Get(bodyBytes, "0.subtitles").String()
+		fmt.Println(track.Lyrics)
+		track.completed = false
+		queryUrl = ApiLink + "/track/?id=" + strconv.Itoa(track.Id) + "&quality=LOSSLESS"
+		bodyBytes, err = request(queryUrl)
 		if err != nil {
 			fmt.Println(err)
 			return false
@@ -359,6 +363,7 @@ func writeMetaData(album Download, track File, fileName string) {
 		taglib.DiscNumber:  {track.mediaNumber},
 		taglib.Label:       {album.label},
 		taglib.ISRC:        {track.isrc},
+		taglib.Lyrics:      {track.Lyrics},
 	}, 0)
 	if err != nil {
 		fmt.Println("Couldn't write Metadata to file " + fileName)
