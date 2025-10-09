@@ -1,6 +1,6 @@
 services:
   tidlarr-proxy:
-    image: tidlarr-proxy
+    image: ghcr.io/mgthepro/tidlarr-proxy:main
     container_name: tidlarr-proxy
     environment:
       - TZ=Europe/Berlin
@@ -12,7 +12,7 @@ services:
       - API_KEY=abc
     user: "1000:1000"
     volumes:
-      - ./tidlarr:/data/tidlarr
+      - ./downloads/folder/here:/data/tidlarr
     ports:
       - "8688:8688"
     restart: unless-stopped
