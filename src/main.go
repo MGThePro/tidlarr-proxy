@@ -15,7 +15,7 @@ import (
 var DownloadPath string
 var Category string
 var Port string
-var ApiLink string
+var ApiLink = [...]string{"https://kraken.squid.wtf", "https://triton.squid.wtf", "https://zeus.squid.wtf", "https://aether.squid.wtf", "https://tidal-api-2.binimum.org", "https://tidal.401658.xyz"}
 var ApiKey string
 
 func getEnv(key string, fallback string) string {
@@ -30,7 +30,6 @@ func main() {
 	DownloadPath = getEnv("DOWNLOAD_PATH", "/data/tidlarr/")
 	Category = getEnv("CATEGORY", "music")
 	Port = getEnv("PORT", "8688")
-	ApiLink = "https://kraken.squid.wtf"
 	ApiKey = getEnv("API_KEY", "")
 
 	//create folders if they don't exist yet
@@ -86,7 +85,9 @@ func main() {
 
 func request(query string) (string, error) {
 	for tries := 0; tries < 20; tries++ {
-		resp, err := http.Get(query)
+		link := ApiLink[tries%len(ApiLink)]
+		fmt.Println("Trying URL " + link + query)
+		resp, err := http.Get(link + query)
 		if err != nil {
 			fmt.Println(err)
 			return "", err
@@ -103,6 +104,6 @@ func request(query string) (string, error) {
 		duration, _ := time.ParseDuration(strconv.Itoa(1+tries) + "s")
 		time.Sleep(duration)
 	}
-	return "", errors.New("Too Many Requests")
+	return "", errors.New("Request failed, servers probably overloaded")
 	
 }

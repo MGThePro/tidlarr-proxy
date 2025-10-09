@@ -140,7 +140,7 @@ func generateDownload(filename string, Id string, numTracks int) {
 	download.numTracks = numTracks
 	download.FileName = filename
 	download.downloaded = 0
-	var queryUrl string = ApiLink + "/album/?id=" + Id
+	var queryUrl string = "/album/?id=" + Id
 	bodyBytes, err := request(queryUrl)
 	if err != nil {
 		fmt.Println(err)
@@ -165,7 +165,7 @@ func generateDownload(filename string, Id string, numTracks int) {
 		track.mediaNumber = gjson.Get(valueString, "item.volumeNumber").String()
 		track.isrc = gjson.Get(valueString, "item.isrc").String()
 		track.completed = false
-		var queryUrl string = ApiLink + "/track/?id=" + strconv.Itoa(track.Id) + "&quality=LOSSLESS"
+		var queryUrl string = "/track/?id=" + strconv.Itoa(track.Id) + "&quality=LOSSLESS"
 		bodyBytes, err := request(queryUrl)
 		if err != nil {
 			fmt.Println(err)
@@ -187,7 +187,7 @@ func generateDownload(filename string, Id string, numTracks int) {
 			return false
 		}
 		if download.CoverUrl == "" {
-			var queryUrl string = ApiLink + "/cover/?id=" + strconv.Itoa(track.Id)
+			var queryUrl string = "/cover/?id=" + strconv.Itoa(track.Id)
 			bodyBytes, err := request(queryUrl)
 			if err != nil {
 				fmt.Println(err)
@@ -338,7 +338,7 @@ func startDownload(Id string) {
 			track.completed = true
 			download.downloaded += 1
 			//grab lyrics while we're here
-			var queryUrl string = ApiLink + "/lyrics/?id=" + strconv.Itoa(track.Id)
+			var queryUrl string = "/lyrics/?id=" + strconv.Itoa(track.Id)
 			bodyBytes, _ := request(queryUrl)
 			track.Lyrics = gjson.Get(bodyBytes, "0.subtitles").String()
 			writeMetaData(*download, track, Folder+Name)

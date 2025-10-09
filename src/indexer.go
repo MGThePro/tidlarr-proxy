@@ -133,7 +133,7 @@ func search(w http.ResponseWriter, u url.URL) {
 	var query string = strings.Replace(u.Query().Get("q"), " ", "+", -1)
 	var Albums []Album
 	//Tidal API (sachinsenal0x64/hifi) doesn't support setting limit or offset as of right now. Just use the first and only 25 results
-	var queryUrl string = ApiLink + "/search/?al=" + query
+	var queryUrl string = "/search/?al=" + query
 	bodyBytes, err := request(queryUrl)
 	if err != nil {
 		fmt.Println(err)
