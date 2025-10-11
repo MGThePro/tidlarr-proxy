@@ -37,6 +37,7 @@ type Download struct {
 	downloaded int
 	FileName   string
 	Files      []File
+	hasLyrics  bool
 }
 
 var Downloads map[string]*Download = make(map[string]*Download)
@@ -140,6 +141,7 @@ func generateDownload(filename string, Id string, numTracks int) {
 	download.numTracks = numTracks
 	download.FileName = filename
 	download.downloaded = 0
+	download.hasLyrics = true
 	var queryUrl string = "/album/?id=" + Id
 	bodyBytes, err := request(queryUrl)
 	if err != nil {
@@ -337,10 +339,13 @@ func startDownload(Id string) {
 		} else {
 			track.completed = true
 			download.downloaded += 1
-			//grab lyrics while we're here
-			var queryUrl string = "/lyrics/?id=" + strconv.Itoa(track.Id)
-			bodyBytes, _ := request(queryUrl)
-			track.Lyrics = gjson.Get(bodyBytes, "0.subtitles").String()
+			//grab lyrics while we're here, but only if all tracks so far had lyrics
+			if (download.hasLyrics) {
+				var queryUrl string = "/lyrics/?id=" + strconv.Itoa(track.Id)
+				bodyBytes, _ := request(queryUrl)
+				track.Lyrics = gjson.Get(bodyBytes, "0.subtitles").String()
+				if (track.Lyrics == "") { download.hasLyrics = false }
+			}
 			writeMetaData(*download, track, Folder+Name)
 		}
 	}
