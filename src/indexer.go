@@ -127,6 +127,7 @@ func music(w http.ResponseWriter, u url.URL) {
 		return
 	}
 	var queryUrl string = "/search/?al=" + u.Query().Get("artist") + "+" + u.Query().Get("album")
+	queryUrl = strings.Replace(queryUrl, " ", "+", -1)
 	response := buildSearchResponse(queryUrl)
 	w.Write([]byte(response))
 }
@@ -200,9 +201,9 @@ func buildSearchResponse(queryUrl string) string {
 		response += "<item>" +
 			"    <!-- Standard RSS 2.0 Data -->" +
 			"    <title>" + releaseName(album) + "</title>" +
-			"    <guid isPermaLink=\"true\">http://servername.com/rss/viewnzb/e9c515e02346086e3a477a5436d7bc8c</guid>" +
-			"    <link>http://servername.com/rss/nzb/e9c515e02346086e3a477a5436d7bc8c&amp;i=1&amp;r=18cf9f0a736041465e3bd521d00a90b9</link>" +
-			"    <comments>http://servername.com/rss/viewnzb/e9c515e02346086e3a477a5436d7bc8c#comments</comments>" +
+			"    <guid isPermaLink=\"true\">http://www.tidal.com/album/" + album.Id + "</guid>" +
+			"    <link>http://www.tidal.com/album/" + album.Id + "</link>" +
+			"    <comments>http://www.tidal.com/album/" + album.Id + "#comments</comments>" +
 			"    <pubDate>" + timestamp.Format("Mon, 02 Jan 2006 15:04:05 -0700") + "</pubDate>" +
 			"    <category>Audio > Lossless</category>" +
 			"    <description>" + album.Artist + " " + album.Title + "</description>" +
