@@ -70,7 +70,8 @@ func caps(w http.ResponseWriter, u url.URL) {
         <search available="yes" supportedParams="q"/>
         <tv-search available="no" supportedParams=""/>
         <movie-search available="no" supportedParams=""/>
-        <audio-search available="yes" supportedParams="q" />
+        <audio-search available="yes" supportedParams="q,artist,album"/>
+        <music-search available="yes" supportedParams="q,artist,album"/>
     </searching>
     <categories>
         <category id="3000" name="Audio">
@@ -86,7 +87,7 @@ func caps(w http.ResponseWriter, u url.URL) {
 }
 
 func music(w http.ResponseWriter, u url.URL) {
-	if u.Query().Get("q") == "" {
+	if (u.Query().Get("q") == "" && u.Query().Get("artist") == "" && u.Query().Get("album") == "") {
 		fmt.Println("searching with no query, responding garbage...")
 		w.Write([]byte(
 			`<?xml version="1.0" encoding="UTF-8"?>
@@ -125,20 +126,34 @@ func music(w http.ResponseWriter, u url.URL) {
 		`))
 		return
 	}
+	var queryUrl string = "/search/?al=" + u.Query().Get("artist") + "+" + u.Query().Get("album")
+	response := buildSearchResponse(queryUrl)
+	w.Write([]byte(response))
 }
 
 func search(w http.ResponseWriter, u url.URL) {
 	//doing the actual querying request
 	//getting the query parameters
 	var query string = strings.Replace(u.Query().Get("q"), " ", "+", -1)
-	var Albums []Album
 	//Tidal API (sachinsenal0x64/hifi) doesn't support setting limit or offset as of right now. Just use the first and only 25 results
 	var queryUrl string = "/search/?al=" + query
+	response := buildSearchResponse(queryUrl)
+	w.Write([]byte(response))
+}
+
+func releaseName(album Album) (name string) {
+	release := album.ReleaseDate[0:4]
+	name = album.Artist + "-" + album.Title + "-" + strconv.FormatInt(album.BitDepth, 10) + "BIT-" + strconv.FormatInt(album.SamplingRate, 10) + "-KHZ-WEB-FLAC-" + release + "-TIDLARR"
+	return name
+}
+
+func buildSearchResponse(queryUrl string) string {
 	bodyBytes, err := request(queryUrl)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return ""
 	}
+	var Albums []Album
 	//iterate over each album and create an Album struct object from it
 	result := gjson.Get(bodyBytes, "albums.items")
 	result.ForEach(func(key, value gjson.Result) bool {
@@ -204,13 +219,7 @@ func search(w http.ResponseWriter, u url.URL) {
 	response += "</channel>\n" +
 		"</rss>"
 
-	w.Write([]byte(response))
-}
-
-func releaseName(album Album) (name string) {
-	release := album.ReleaseDate[0:4]
-	name = album.Artist + "-" + album.Title + "-" + strconv.FormatInt(album.BitDepth, 10) + "BIT-" + strconv.FormatInt(album.SamplingRate, 10) + "-KHZ-WEB-FLAC-" + release + "-TIDLARR"
-	return name
+	return response
 }
 
 func fakenzb(w http.ResponseWriter, u url.URL) {
