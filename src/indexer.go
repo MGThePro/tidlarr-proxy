@@ -202,6 +202,10 @@ func buildSearchResponse(queryUrl string) string {
 			//We don't actually know this until we download it, but the chance it's >16 is pretty high
 			hiresAlbum.BitDepth = 24
 			
+			//recalculate size based on new bit depth and sample rate
+			hiresAlbum.Size = int64(float64(((hiresAlbum.SamplingRate * 1000) * (hiresAlbum.BitDepth * hiresAlbum.Channels * hiresAlbum.Duration) / 8)) * 0.7)
+			
+			//differentiate hires release from regular release
 			hiresAlbum.Id += "%hires"
 			Albums = append(Albums, hiresAlbum)
 		}
