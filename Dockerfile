@@ -10,4 +10,5 @@ FROM alpine:latest AS workspace
 WORKDIR /app
 COPY --from=builder /app/tidlarr-proxy /app/tidlarr-proxy
 RUN mkdir -p /data/tidlarr
+RUN apk update && apk add ffmpeg
 ENTRYPOINT ["./tidlarr-proxy"]

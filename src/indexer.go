@@ -173,12 +173,38 @@ func buildSearchResponse(queryUrl string) string {
 		album.SamplingRate = 44
 		album.BitDepth = 16
 		album.Duration = gjson.Get(resultString, "duration").Int()
-
 		//guesstimate filesize based on Sampling Rate, Bit Depth, Channel count and duration
 		//assuming all tracks of that album have the same specifications and that FLAC is 70% as large as WAV
 		// (Sampling Rate in Hz * Bit depth * channels * seconds) / 8 to get it from bits to bytes
 		album.Size = int64(float64(((album.SamplingRate * 1000) * (album.BitDepth * album.Channels * album.Duration) / 8)) * 0.7)
 		Albums = append(Albums, album)
+		
+		if (gjson.Get(resultString, "mediaMetadata.tags.#(%\"HIRES_LOSSLESS\")").Exists()) {
+			fmt.Println("Found HiRes for Album " + album.Title)
+			hiresAlbum := album
+			var albumQueryUrl string = "/album/?id=" + album.Id
+			albumBytes, err := request(albumQueryUrl)
+			if err != nil {
+				fmt.Println(err)
+			}
+			var trackId string = gjson.Get(albumBytes, "1.items.1.item.id").String()
+			fmt.Println("Looking up info on track " + trackId)
+			var trackQueryUrl string = "/dash/?id=" + trackId
+			trackBytes, err := request(trackQueryUrl)
+			if err != nil {
+				fmt.Println(err)
+			}
+			reg := regexp.MustCompile("audioSamplingRate=\"[0-9]*\">")
+			var rateString string = reg.FindString(trackBytes)
+			rateString = rateString[19:len(rateString)-2]
+			rateNum, _ := strconv.Atoi(rateString)
+			hiresAlbum.SamplingRate = int64(rateNum)/1000
+			//We don't actually know this until we download it, but the chance it's >16 is pretty high
+			hiresAlbum.BitDepth = 24
+			
+			hiresAlbum.Id += "%hires"
+			Albums = append(Albums, hiresAlbum)
+		}
 		return true // keep iterating
 	})
 	//Create XML Response

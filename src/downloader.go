@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -38,6 +39,7 @@ type Download struct {
 	FileName   string
 	Files      []File
 	hasLyrics  bool
+	hires      bool
 }
 
 var Downloads map[string]*Download = make(map[string]*Download)
@@ -142,6 +144,11 @@ func generateDownload(filename string, Id string, numTracks int) {
 	download.FileName = filename
 	download.downloaded = 0
 	download.hasLyrics = true
+	if strings.Contains(filename, "24BIT") {
+		download.hires = true
+	} else {
+		download.hires = false
+	}
 	var queryUrl string = "/album/?id=" + Id
 	bodyBytes, err := request(queryUrl)
 	if err != nil {
@@ -173,20 +180,24 @@ func generateDownload(filename string, Id string, numTracks int) {
 			fmt.Println(err)
 			return false
 		}
-		track.DownloadLink = gjson.Get(bodyBytes, "2.OriginalTrackUrl").String()
-		if track.DownloadLink == "" {
-			fmt.Println("squid.wtf didn't give a link for track " + track.Name)
-			fmt.Println("This is most likely an error with squid.wtf or Tidal itself...")
-			fmt.Println("Cancelling download...")
-			fmt.Println("Response:")
-			fmt.Println(string(bodyBytes))
-			download.downloaded = -1
-			err := os.RemoveAll(DownloadPath + "/incomplete/" + Category + "/" + download.FileName)
-			if err != nil {
-				fmt.Println("Couldn't delete folder " + download.FileName)
-				fmt.Println(err)
+		if download.hires == false {
+			track.DownloadLink = gjson.Get(bodyBytes, "2.OriginalTrackUrl").String()
+			if track.DownloadLink == "" {
+				fmt.Println("squid.wtf didn't give a link for track " + track.Name)
+				fmt.Println("This is most likely an error with squid.wtf or Tidal itself...")
+				fmt.Println("Cancelling download...")
+				fmt.Println("Response:")
+				fmt.Println(string(bodyBytes))
+				download.downloaded = -1
+				err := os.RemoveAll(DownloadPath + "/incomplete/" + Category + "/" + download.FileName)
+				if err != nil {
+					fmt.Println("Couldn't delete folder " + download.FileName)
+					fmt.Println(err)
+				}
+				return false
 			}
-			return false
+		} else {
+			track.DownloadLink = "/dash/?id=" + strconv.Itoa(track.Id)
 		}
 		if download.CoverUrl == "" {
 			var queryUrl string = "/cover/?id=" + strconv.Itoa(track.Id)
@@ -331,23 +342,43 @@ func startDownload(Id string) {
 	//Download each track
 	for _, track := range download.Files {
 		var Name string = track.Index + " - " + download.Artist + " - " + track.Name + ".flac"
-		_, err := grab.Get(Folder+Name, track.DownloadLink)
-		if err != nil {
-			fmt.Println("Failed to download track " + track.Name)
-			fmt.Println(err)
-			return
-		} else {
-			track.completed = true
-			download.downloaded += 1
-			//grab lyrics while we're here, but only if all tracks so far had lyrics
-			if (download.hasLyrics) {
-				var queryUrl string = "/lyrics/?id=" + strconv.Itoa(track.Id)
-				bodyBytes, _ := request(queryUrl)
-				track.Lyrics = gjson.Get(bodyBytes, "0.subtitles").String()
-				if (track.Lyrics == "") { download.hasLyrics = false }
+		if download.hires {
+			app := "ffmpeg"
+			arg0 := "-i"
+			arg2 := "-acodec"
+			arg3 := "copy"
+			arg4 := Folder+Name
+			
+			for tries := 0; tries < 20; tries++ {
+				arg1 := ApiLink[(track.Id+tries) % len(ApiLink)] + track.DownloadLink
+				cmd := exec.Command(app, arg0, arg1, arg2, arg3, arg4)
+				_, err := cmd.Output()
+				if err == nil {
+					break
+				}
+				if tries == 19 {
+					fmt.Println("Failed to download track " + track.Name)
+					return
+				}
 			}
-			writeMetaData(*download, track, Folder+Name)
+		} else {
+			_, err := grab.Get(Folder+Name, track.DownloadLink)
+			if err != nil {
+				fmt.Println("Failed to download track " + track.Name)
+				fmt.Println(err)
+				return
+			}
 		}
+		track.completed = true
+		download.downloaded += 1
+		//grab lyrics while we're here, but only if all tracks so far had lyrics
+		if (download.hasLyrics) {
+			var queryUrl string = "/lyrics/?id=" + strconv.Itoa(track.Id)
+			bodyBytes, _ := request(queryUrl)
+			track.Lyrics = gjson.Get(bodyBytes, "0.subtitles").String()
+			if (track.Lyrics == "") { download.hasLyrics = false }
+		}
+		writeMetaData(*download, track, Folder+Name)
 	}
 	//Download (should be) complete, move to complete folder
 	os.Rename(Folder, DownloadPath+"/complete/"+Category+"/"+download.FileName)
