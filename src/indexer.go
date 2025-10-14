@@ -126,7 +126,7 @@ func music(w http.ResponseWriter, u url.URL) {
 		`))
 		return
 	}
-	var queryUrl string = "/search/?al=" + u.Query().Get("artist") + "+" + u.Query().Get("album")
+	var queryUrl string = "/search/?al=" + url.QueryEscape(u.Query().Get("artist")) + "+" + url.QueryEscape(u.Query().Get("album"))
 	queryUrl = strings.Replace(queryUrl, " ", "+", -1)
 	response := buildSearchResponse(queryUrl)
 	w.Write([]byte(response))
