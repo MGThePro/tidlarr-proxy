@@ -135,7 +135,7 @@ func music(w http.ResponseWriter, u url.URL) {
 func search(w http.ResponseWriter, u url.URL) {
 	//doing the actual querying request
 	//getting the query parameters
-	var query string = strings.Replace(u.Query().Get("q"), " ", "+", -1)
+	var query string = url.QueryEscape(u.Query().Get("q"))
 	//Tidal API (sachinsenal0x64/hifi) doesn't support setting limit or offset as of right now. Just use the first and only 25 results
 	var queryUrl string = "/search/?al=" + query
 	response := buildSearchResponse(queryUrl)
@@ -223,7 +223,7 @@ func buildSearchResponse(queryUrl string) string {
 	//iterate over each album and create <item> parts of response
 	for _, album := range Albums {
 		//some basic sanitation of artist and title
-		reg := regexp.MustCompile("[^a-zA-Z0-9 ]+")
+		reg := regexp.MustCompile(`[^\p{L}\p{N} ]+`)
 		album.Title = reg.ReplaceAllString(album.Title, "")
 		album.Artist = reg.ReplaceAllString(album.Artist, "")
 		timestamp, _ := time.Parse("2006-01-02", album.ReleaseDate)
