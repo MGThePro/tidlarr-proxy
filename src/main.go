@@ -15,7 +15,7 @@ import (
 var DownloadPath string
 var Category string
 var Port string
-var ApiLink = [...]string{"https://kraken.squid.wtf", "https://triton.squid.wtf", "https://zeus.squid.wtf", "https://aether.squid.wtf", "https://tidal-api-2.binimum.org", "https://tidal.401658.xyz", "https://hund.qqdl.site", "https://katze.qqdl.site", "https://maus.qqdl.site" , "https://vogel.qqdl.site", "https://wolf.qqdl.site"}
+var ApiLink = [...]string{"https://triton.squid.wtf", "https://aether.squid.wtf", "https://zeus.squid.wtf", "https://kraken.squid.wtf", "https://phoenix.squid.wtf", "https://shiva.squid.wtf", "https://chaos.squid.wtf", "https://ohio.monochrome.tf", "https://virginia.monochrome.tf", "https://oregon.monochrome.tf", "https://frankfurt.monochrome.tf", "https://singapore.monochrome.tf", "https://wolf.qqdl.site", "https://maus.qqdl.site", "https://vogel.qqdl.site", "https://katze.qqdl.site", "https://hund.qqdl.site"}
 var ApiKey string
 
 func getEnv(key string, fallback string) string {
@@ -86,7 +86,7 @@ func main() {
 func request(query string) (string, error) {
 	var offset int = rand.Intn(len(ApiLink))
 	for tries := 0; tries < len(ApiLink)*3; tries++ {
-		link := ApiLink[(tries+offset) % len(ApiLink)]
+		link := ApiLink[(tries+offset)%len(ApiLink)]
 		fmt.Println("Trying URL " + link + query)
 		resp, err := http.Get(link + query)
 		if err != nil {
@@ -106,5 +106,5 @@ func request(query string) (string, error) {
 		time.Sleep(duration)
 	}
 	return "", errors.New("Request failed, servers probably overloaded")
-	
+
 }
