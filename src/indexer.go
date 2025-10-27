@@ -87,7 +87,7 @@ func caps(w http.ResponseWriter, u url.URL) {
 }
 
 func music(w http.ResponseWriter, u url.URL) {
-	if (u.Query().Get("q") == "" && u.Query().Get("artist") == "" && u.Query().Get("album") == "") {
+	if u.Query().Get("q") == "" && u.Query().Get("artist") == "" && u.Query().Get("album") == "" {
 		fmt.Println("searching with no query, responding garbage...")
 		w.Write([]byte(
 			`<?xml version="1.0" encoding="UTF-8"?>
@@ -178,8 +178,8 @@ func buildSearchResponse(queryUrl string) string {
 		// (Sampling Rate in Hz * Bit depth * channels * seconds) / 8 to get it from bits to bytes
 		album.Size = int64(float64(((album.SamplingRate * 1000) * (album.BitDepth * album.Channels * album.Duration) / 8)) * 0.7)
 		Albums = append(Albums, album)
-		
-		if (gjson.Get(resultString, "mediaMetadata.tags.#(%\"HIRES_LOSSLESS\")").Exists()) {
+
+		/*if (gjson.Get(resultString, "mediaMetadata.tags.#(%\"HIRES_LOSSLESS\")").Exists()) {
 			fmt.Println("Found HiRes for Album " + album.Title)
 			hiresAlbum := album
 			var albumQueryUrl string = "/album/?id=" + album.Id
@@ -201,14 +201,14 @@ func buildSearchResponse(queryUrl string) string {
 			hiresAlbum.SamplingRate = int64(rateNum)/1000
 			//We don't actually know this until we download it, but the chance it's >16 is pretty high
 			hiresAlbum.BitDepth = 24
-			
+
 			//recalculate size based on new bit depth and sample rate
 			hiresAlbum.Size = int64(float64(((hiresAlbum.SamplingRate * 1000) * (hiresAlbum.BitDepth * hiresAlbum.Channels * hiresAlbum.Duration) / 8)) * 0.7)
-			
+
 			//differentiate hires release from regular release
 			hiresAlbum.Id += "%hires"
 			Albums = append(Albums, hiresAlbum)
-		}
+		}*/
 		return true // keep iterating
 	})
 	//Create XML Response
@@ -227,7 +227,7 @@ func buildSearchResponse(queryUrl string) string {
 		album.Title = reg.ReplaceAllString(album.Title, "")
 		album.Artist = reg.ReplaceAllString(album.Artist, "")
 		timestamp, _ := time.Parse("2006-01-02", album.ReleaseDate)
-		
+
 		response += "<item>" +
 			"    <!-- Standard RSS 2.0 Data -->" +
 			"    <title>" + releaseName(album) + "</title>" +
